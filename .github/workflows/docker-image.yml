@@ -2,37 +2,22 @@ name: Docker Image push to AWS ECR
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "dev"]
+
+permissions:
+  id-token: write
+  contents: read
 
 env:
-  NEXT_PUBLIC_NOTION_DATABASE_ID: ${{ secrets.NEXT_PUBLIC_NOTION_DATABASE_ID }}
-  NEXT_PUBLIC_NOTION_TOKEN: ${{ secrets.NEXT_PUBLIC_NOTION_TOKEN }}
+  BUCKET_NAME: "<example-bucket-name>"
+  AWS_REGION: ap-northeast-2
 
 jobs:
-  echo-secret:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Read a secrets
-        run: echo "My NEXT_PUBLIC_NOTION_DATABASE_ID value is ${{ secrets.NEXT_PUBLIC_NOTION_DATABASE_ID }}"
-
-      - name: Read a secrets
-        run: echo "My NEXT_PUBLIC_NOTION_TOKEN value is ${{ secrets.NEXT_PUBLIC_NOTION_TOKEN }}"
-
-      - uses: actions/checkout@v2
-      - name: Read the env from an external script
-        run: |
-          chmod +x .github/scripts/custom.sh
-          .github/scripts/custom.sh
-        shell: bash
-
   build:
     name: Build and Push to ECR
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
 
     steps:
       - name: Checkout
@@ -41,8 +26,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::957577203899:role/gh-role
-          aws-region: ap-northeast-2
+          role-to-assume: arn:aws:iam::957577203899:role/github-action
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION}}
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
